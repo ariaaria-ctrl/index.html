@@ -1,1 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Chronos Paradox Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background for a mysterious vibe */
+            color: #c9d1d9;
+        }
+        .container-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+        }
+        .card-bg {
+            background-color: #161b22;
+        }
+        .decision-a { background-color: #1a4d3a; } /* Dark Green */
+        .decision-b { background-color: #4d1a1a; } /* Dark Red */
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
 
+    <div id="auth-status" class="hidden"></div>
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-10 p-4 border-b border-gray-700">
+            <h1 class="text-4xl font-bold text-teal-400">The Narrative-Puzzle Engine</h1>
+            <p class="text-gray-400 mt-2">Generate your custom, single-session, ethical mystery game for two players.</p>
+        </header>
+
+        <!-- Input Section -->
+        <div id="input-section" class="card-bg p-6 rounded-xl container-shadow mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200">Game Setup</h2>
+            <div class="space-y-4">
+                <label for="apiKeyInput" class="block text-sm font-medium text-red-400">1. Enter Your Gemini API Key (Required to generate content):</label>
+                <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API key here..." class="w-full p-3 rounded-lg bg-gray-700 text-white border border-red-600 focus:ring-teal-500 focus:border-teal-500">
+                
+                <label for="gameTheme" class="block text-sm font-medium text-gray-400">2. Enter your desired plot theme:</label>
+                <input type="text" id="gameTheme" placeholder="A near-future, ethical espionage mystery..." class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-teal-500 focus:border-teal-500" value="An ancient artifact is causing global memory loss. One of us wants to save the artifact, the other wants to destroy it.">
+                
+                <button onclick="generateGame()" id="generate-button" class="w-full p-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg transition duration-200 shadow-lg">
+                    Generate Game Artifacts
+                </button>
+                <div id="loading-indicator" class="hidden text-center text-teal-400 mt-4">
+                    <svg class="animate-spin h-5 w-5 mr-3 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating game content and complex JSON...
+                </div>
+                <div id="error-message" class="hidden p-3 bg-red-800 text-white rounded-lg mt-4"></div>
+            </div>
+        </div>
+
+        <!-- Output Section -->
+        <div id="output-section" class="hidden">
+            <h2 class="text-3xl font-bold mb-6 text-center text-white" id="game-title"></h2>
+            
+            <!-- Context -->
+            <div class="card-bg p-6 rounded-xl container-shadow mb-8">
+                <h3 class="text-xl font-bold mb-3 text-teal-300 flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.247m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18s-3.332.477-4.5 1.247"></path></svg>
+                    Initial Context: The Setup
+                </h3>
+                <p id="initial-context" class="text-gray-300 leading-relaxed"></p>
+            </div>
+
+            <!-- Character Sheets -->
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div id="character1-sheet" class="card-bg p-6 rounded-xl container-shadow border-t-4 border-l-4 border-blue-500">
+                    <h3 class="text-2xl font-extrabold mb-3 text-blue-400" id="char1-name"></h3>
+                    <div class="space-y-2 text-sm">
+                        <p><strong class="text-blue-300">Role:</strong> <span id="char1-role"></span></p>
+                        <p><strong class="text-blue-300">Core Ethics:</strong> <span id="char1-ethics"></span></p>
+                        <p><strong class="text-blue-300">Special Skill:</strong> <span id="char1-skill"></span></p>
+                        <p class="mt-4 p-2 bg-gray-700 rounded"><strong class="text-blue-300">Secret Goal:</strong> <span id="char1-goal"></span></p>
+                    </div>
+                </div>
+                <div id="character2-sheet" class="card-bg p-6 rounded-xl container-shadow border-t-4 border-l-4 border-red-500">
+                    <h3 class="text-2xl font-extrabold mb-3 text-red-400" id="char2-name"></h3>
+                    <div class="space-y-2 text-sm">
+                        <p><strong class="text-red-300">Role:</strong> <span id="char2-role"></span></p>
+                        <p><strong class="text-red-300">Core Ethics:</strong> <span id="char2-ethics"></span></p>
+                        <p><strong class="text-red-300">Special Skill:</strong> <span id="char2-skill"></span></p>
+                        <p class="mt-4 p-2 bg-gray-700 rounded"><strong class="text-red-300">Secret Goal:</strong> <span id="char2-goal"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Card 1 -->
+            <div class="card-bg p-6 rounded-xl container-shadow border-2 border-yellow-400">
+                <h3 class="text-2xl font-bold mb-4 text-yellow-300 flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    CLUE / DECISION CARD #1
+                </h3>
+                <p id="card1-text" class="text-lg text-gray-200 mb-6"></p>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <!-- Option A -->
+                    <div class="p-4 rounded-lg decision-a shadow-lg border-2 border-green-600">
+                        <p class="font-bold text-xl mb-2 text-green-300">Option A: <span id="option-a-title"></span></p>
+                        <p class="text-sm text-green-100 italic" id="option-a-description"></p>
+                        <p class="mt-3 text-xs text-gray-300">Narrative Direction: <span id="option-a-next"></span></p>
+                    </div>
+                    <!-- Option B -->
+                    <div class="p-4 rounded-lg decision-b shadow-lg border-2 border-red-600">
+                        <p class="font-bold text-xl mb-2 text-red-300">Option B: <span id="option-b-title"></span></p>
+                        <p class="text-sm text-red-100 italic" id="option-b-description"></p>
+                        <p class="mt-3 text-xs text-gray-300">Narrative Direction: <span id="option-b-next"></span></p>
+                    </div>
+                </div>
+
+                <p class="text-center text-sm text-gray-400 mt-6 pt-4 border-t border-gray-700">
+                    <strong class="text-yellow-400">ROLE-PLAY INSTRUCTION:</strong> Discuss this Decision Card for a minimum of 5 minutes before agreeing on which path to take (A or B).
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gemini API Application Logic -->
+    <script>
+        // --- Core Functions and API Key Retrieval ---
+        const API_MODEL = "gemini-2.5-flash-preview-09-2025";
+
+        // --- Exponential Backoff Retry Function ---
+        async function fetchWithRetry(url, options, max
